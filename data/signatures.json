@@ -1,0 +1,23 @@
+[
+  {
+    "id": "SIG-MAL-001",
+    "sampleId": "MAL-001",
+    "name": "Simulated Trojan.Downloader.SampleA",
+    "pattern": "E8 00 00 00 00 5D 81 ED 12 34 56 78 8D B5",
+    "description": "Simulated signature matching known Trojan dropper payload sequence in executable header."
+  },
+  {
+    "id": "SIG-WORM-002",
+    "sampleId": "MAL-LEGACY",
+    "name": "Simulated Worm.Replicator.Legacy",
+    "pattern": "4D 5A 90 00 03 00 00 00 04 00 00 00 FF FF",
+    "description": "Simulated legacy signature for known network replication routine."
+  },
+  {
+    "id": "SIG-SPY-003",
+    "sampleId": "MAL-KEYLOG",
+    "name": "Simulated Spyware.KeyLogger.Sample",
+    "pattern": "55 8B EC 83 C4 F0 53 56 57 B8 ?? ?? ?? ??",
+    "description": "Simulated signature detecting known keylogging hook injection pattern."
+  }
+]

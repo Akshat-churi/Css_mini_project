@@ -1,0 +1,118 @@
+[
+  {
+    "sampleId": "CLEAN-001",
+    "name": "Clean Application (TextEditor_v2.1.exe)",
+    "fileType": "Simulated Windows PE Executable (GUI Application)",
+    "simulatedHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "simulatedSignature": "None",
+    "behaviors": {
+      "processCreation": {
+        "active": false,
+        "detail": "Standard process initialization; no unauthorized child processes spawned."
+      },
+      "fileModification": {
+        "active": false,
+        "detail": "Only standard user document read/write operations within user-specified directories."
+      },
+      "persistenceAttempt": {
+        "active": false,
+        "detail": "No registry startup entries, scheduled tasks, or service installations attempted."
+      },
+      "networkActivity": {
+        "active": false,
+        "detail": "No outbound network or command-and-control communication detected."
+      },
+      "systemModification": {
+        "active": false,
+        "detail": "No modification of OS configuration, registry, or security policies."
+      }
+    }
+  },
+  {
+    "sampleId": "MAL-001",
+    "name": "Known Malicious Program (TrojanDownloader_v1.exe)",
+    "fileType": "Simulated Windows PE Executable (Trojan Dropper)",
+    "simulatedHash": "5d41402abc4b2a76b9719d911017c592a8624aab89b4185764d048dfd2e3ffba",
+    "simulatedSignature": "SIG-MAL-001",
+    "behaviors": {
+      "processCreation": {
+        "active": true,
+        "detail": "Spawns hidden background instances of cmd.exe and powershell.exe with encoded arguments."
+      },
+      "fileModification": {
+        "active": true,
+        "detail": "Writes executable payloads into %AppData% and attempts writing to system folder."
+      },
+      "persistenceAttempt": {
+        "active": true,
+        "detail": "Injects an entry into HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run."
+      },
+      "networkActivity": {
+        "active": true,
+        "detail": "Initiates outbound encrypted HTTP/TCP connections to known malicious C2 IP: 198.51.100.24:8080."
+      },
+      "systemModification": {
+        "active": true,
+        "detail": "Attempts to disable simulated security service registry keys and tamper with firewall rules."
+      }
+    }
+  },
+  {
+    "sampleId": "MAL-MOD-001",
+    "name": "Modified Malicious Program (TrojanMorphed_v2.exe)",
+    "fileType": "Simulated Windows PE Executable (Polymorphic Payload)",
+    "simulatedHash": "9f83a45c2f82163b2f588a4498305c21de4e590025f8263cf224c61dfb68903e",
+    "simulatedSignature": "None",
+    "behaviors": {
+      "processCreation": {
+        "active": true,
+        "detail": "Spawns unauthorized child process injecting shellcode into system memory space."
+      },
+      "fileModification": {
+        "active": true,
+        "detail": "Encrypts documents in Documents directory and renames files with rapid I/O bursts."
+      },
+      "persistenceAttempt": {
+        "active": true,
+        "detail": "Creates an obfuscated scheduled task to trigger execution at system reboot."
+      },
+      "networkActivity": {
+        "active": true,
+        "detail": "Attempts beaconing to untrusted external hostname resolver on non-standard port 9443."
+      },
+      "systemModification": {
+        "active": false,
+        "detail": "Avoided explicit system service changes to evade legacy static rule alerts."
+      }
+    }
+  },
+  {
+    "sampleId": "UNK-001",
+    "name": "Unknown Program (SysMonitorHelper_x64.exe)",
+    "fileType": "Simulated Windows PE Executable (Background Utility)",
+    "simulatedHash": "c0535e4be2b79ffd93291305436bf889314e4a3faec05ecffcbb7ff310899011",
+    "simulatedSignature": "None",
+    "behaviors": {
+      "processCreation": {
+        "active": true,
+        "detail": "Spawns a local helper process to sample CPU and RAM performance metrics."
+      },
+      "fileModification": {
+        "active": false,
+        "detail": "Only appends text lines into an application log file under its local install directory."
+      },
+      "persistenceAttempt": {
+        "active": false,
+        "detail": "No unauthorized startup entries detected; runs only when launched by user."
+      },
+      "networkActivity": {
+        "active": true,
+        "detail": "Transmits periodic software telemetry packets to an unverified vendor analytics server."
+      },
+      "systemModification": {
+        "active": false,
+        "detail": "Queries system hardware specs via WMI; does not modify operating system configuration."
+      }
+    }
+  }
+]

@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="College Virtual Lab experiment demonstrating malicious program detection using virus signature matching and behavioral analysis.">
+  <title>Demonstrate Malicious Program Detection using Virus Signature and Behavioral Analysis</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <main class="lab-container">
+
+    <!-- 1. Header / Experiment Title -->
+    <header class="lab-header">
+      <div class="lab-category">Virtual Laboratory &bull; Department of Computer Engineering</div>
+      <h1 id="exp-title">Demonstrate Malicious Program Detection Using Virus Signature and Behavioral Analysis</h1>
+
+      <div class="lab-nav-bar" role="navigation" aria-label="Experiment Quick Links">
+        <a href="#section-simulation" class="lab-nav-link">&#9654; Go to Simulation</a>
+        <a href="#section-comparison" class="lab-nav-link">&#9878; Comparison</a>
+        <a href="#section-report" class="lab-nav-link">&#128196; Generate Lab Report</a>
+        <a href="#section-quiz" class="lab-nav-link">&#9997; Self-Assessment Quiz</a>
+      </div>
+    </header>
+
+    <!-- 2. Aim -->
+    <section class="lab-section" id="section-aim" aria-labelledby="heading-aim">
+      <h2 id="heading-aim">1. Aim</h2>
+      <p>
+        To demonstrate the detection and classification of potentially malicious computer programs using two fundamental
+        techniques:
+        <strong>Virus Signature Analysis</strong> (static pattern matching) and <strong>Behavioral Analysis</strong>
+        (dynamic runtime indicator assessment).
+      </p>
+    </section>
+
+    <!-- 3. Objectives -->
+    <section class="lab-section" id="section-objectives" aria-labelledby="heading-objectives">
+      <h2 id="heading-objectives">2. Objectives</h2>
+      <p>Upon completing this laboratory practical, students will be able to:</p>
+      <ul>
+        <li>Understand the core concept of a virus signature and static hash/byte pattern matching.</li>
+        <li>Identify runtime behavioral indicators associated with malicious activities (e.g., process spawning,
+          unauthorized file encryption, persistence creation).</li>
+        <li>Perform simulated signature-based scanning against a predefined signature repository.</li>
+        <li>Perform simulated behavioral inspection to evaluate suspicious runtime actions and compute risk levels.</li>
+        <li>Synthesize findings from both static signatures and behavioral indicators to reach a combined detection
+          verdict.</li>
+        <li>Explain why behavioral heuristics can detect zero-day or modified malware variants that evade static
+          signature databases.</li>
+      </ul>
+    </section>
+
+    <!-- 4. Theory -->
+    <section class="lab-section" id="section-theory" aria-labelledby="heading-theory">
+      <h2 id="heading-theory">3. Theory</h2>
+
+      <h3>A. What is a Malicious Program?</h3>
+      <p>
+        A malicious program (malware) is software intentionally designed to cause damage to a computer, server, client,
+        or computer network. Common classifications include viruses, worms, trojan horses, ransomware, keyloggers, and
+        rootkits. Malware often attempts to gain unauthorized access, exfiltrate private data, disrupt system services,
+        or lock user data for ransom.
+      </p>
+
+      <h3>B. What is a Virus Signature?</h3>
+      <p>
+        A virus signature is a unique identifier or continuous sequence of bytes (often represented as a cryptographic
+        hash such as SHA-256 or a specific opcode sequence) extracted from known malware. Because malicious binaries
+        typically contain distinctive instruction patterns or fixed headers, security researchers extract these static
+        byte sequences into a signature repository.
+      </p>
+
+      <h3>C. How Signature-Based Detection Works</h3>
+      <p>
+        During static analysis, an antivirus scanner calculates the hash or scans the binary structure of a target file.
+        It compares these extracted attributes against a local or cloud database of known threat signatures. If an exact
+        match is identified, the file is immediately flagged as malicious without needing execution.
+      </p>
+
+      <h3>D. Limitations of Signature-Based Detection</h3>
+      <p>
+        While signature scanning is computationally fast and produces low false-positive rates for known threats, it has
+        severe limitations:
+      </p>
+      <ul>
+        <li><strong>Zero-Day Threats:</strong> Completely novel malware lacks existing signatures in the database and
+          will go undetected.</li>
+        <li><strong>Polymorphism & Metamorphism:</strong> Malware authors routinely recompile, encrypt, or pack their
+          binaries so the internal byte sequence and hash change completely while retaining identical malicious
+          functionality.</li>
+      </ul>
+
+      <h3>E. What is Behavioral Analysis?</h3>
+      <p>
+        Behavioral analysis observes what a program does during execution (dynamic analysis) rather than how it looks on
+        disk. Security systems monitor system calls, API usage, registry writes, network sockets, and process lifecycles
+        in a controlled sandbox environment.
+      </p>
+
+      <h3>F. Examples of Behavioral Indicators</h3>
+      <ul>
+        <li><strong>Process Creation:</strong> Spawning unauthorized background shells (such as cmd.exe or
+          powershell.exe) with obfuscated parameters.</li>
+        <li><strong>File Modification:</strong> Mass modification, renaming, or rapid encryption of files in user
+          folders.</li>
+        <li><strong>Persistence Attempt:</strong> Modifying system startup registry keys (e.g., Run keys), scheduled
+          tasks, or services to ensure survival across reboots.</li>
+        <li><strong>Suspicious Network Activity:</strong> Establishing outbound socket connections to untrusted
+          command-and-control (C2) servers or uncommon ports.</li>
+        <li><strong>System Modification:</strong> Disabling firewall rules, disabling antivirus services, or tampering
+          with core security policies.</li>
+      </ul>
+
+    </section>
+
+    <!-- 5. Procedure -->
+    <section class="lab-section" id="section-procedure" aria-labelledby="heading-procedure">
+      <h2 id="heading-procedure">4. Procedure</h2>
+      <ol>
+        <li>Navigate to the <strong>Interactive Simulation</strong> section below.</li>
+        <li>Select a test sample program from the <strong>Sample Program</strong> dropdown menu.</li>
+        <li>Observe the simulated program attributes displayed in the metadata table (Program Name, Sample ID, File
+          Type, Simulated Hash, and Signature).</li>
+        <li>Click <strong>[ Run Signature Scan ]</strong> to check the sample against the simulated signature database
+          (<code>signatures.json</code>). Review the matched status and explanation.</li>
+        <li>Click <strong>[ Run Behavioral Analysis ]</strong> to evaluate the sample's runtime activity indicators from
+          <code>behavior-profiles.json</code> and compute the behavioral risk score.
+        </li>
+        <li>Inspect the <strong>Combined Detection Result</strong> section to review the synthesized classification
+          (Clean, Suspicious, or Malicious).</li>
+        <li>Review the chronological steps recorded in the <strong>Activity Log</strong>.</li>
+        <li>Read the dynamic educational <strong>Observation</strong> generated for your test run.</li>
+        <li>Repeat the steps for all four sample types (Clean Application, Known Malicious Program, Modified Malicious
+          Program, and Unknown Program).</li>
+        <li>Complete the self-assessment <strong>Quiz</strong> at the end of the lab to evaluate your understanding.
+        </li>
+      </ol>
+    </section>
+
+    <!-- 6. Interactive Simulation -->
+    <section class="lab-section" id="section-simulation" aria-labelledby="heading-simulation">
+      <h2 id="heading-simulation">5. Interactive Simulation</h2>
+
+      <!-- Experiment Simulation Progress Bar -->
+      <div class="progress-container" id="simulation-progress-wrapper" aria-label="Experiment Simulation Progress">
+        <div class="progress-header">
+          <div class="progress-title-group">
+            <span class="progress-title">Simulation Progress</span>
+            <span class="progress-counter" id="progress-counter-text">0 of 4 Samples Completed</span>
+          </div>
+          <div class="progress-percentage" id="progress-percent-text">0%</div>
+        </div>
+        <div class="progress-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"
+          id="progress-bar-track">
+          <div class="progress-bar-fill" id="progress-bar-fill" style="width: 0%;"></div>
+        </div>
+        <div class="progress-milestones" id="progress-milestones">
+          <div class="milestone-badge" id="badge-sample-1" data-name="Sample 1: Clean">
+            <span class="milestone-icon">○</span> Sample 1: Clean
+          </div>
+          <div class="milestone-badge" id="badge-sample-2" data-name="Sample 2: Known Malicious">
+            <span class="milestone-icon">○</span> Sample 2: Known Malicious
+          </div>
+          <div class="milestone-badge" id="badge-sample-3" data-name="Sample 3: Modified (Evasion)">
+            <span class="milestone-icon">○</span> Sample 3: Modified (Evasion)
+          </div>
+          <div class="milestone-badge" id="badge-sample-4" data-name="Sample 4: Unknown Utility">
+            <span class="milestone-icon">○</span> Sample 4: Unknown Utility
+          </div>
+        </div>
+      </div>
+
+      <div class="sim-controls">
+        <div class="form-group">
+          <label for="sample-select">Select Sample Program to Analyze:</label>
+          <select id="sample-select" class="lab-select">
+            <option value="">-- Choose a Sample Program --</option>
+            <option value="CLEAN-001">Sample 1: Clean Application (TextEditor_v2.1.exe)</option>
+            <option value="MAL-001">Sample 2: Known Malicious Program (TrojanDownloader_v1.exe)</option>
+            <option value="MAL-MOD-001">Sample 3: Modified Malicious Program (TrojanMorphed_v2.exe)</option>
+            <option value="UNK-001">Sample 4: Unknown Program (SysMonitorHelper_x64.exe)</option>
+            <option value="CUSTOM">Option 5: Custom Threat Sandbox (Define Custom Malware Profile)</option>
+          </select>
+        </div>
+
+        <!-- Custom Sample Sandbox Form -->
+        <div id="custom-sample-panel" class="custom-threat-card" style="display: none;">
+          <h4>Custom Threat Sandbox (User-Defined Binary & File Upload)</h4>
+          <p style="font-size: 13px; color: var(--secondary-color); margin-bottom: 12px;">
+            Upload an executable or arbitrary file to inspect its cryptographic SHA-256 hash and test signature detection against the local database, or manually configure a custom threat profile with simulated behavioral indicators.
+          </p>
+
+          <!-- Safe Sandbox Execution Disclaimer -->
+          <div class="safe-sandbox-banner" role="status">
+            <div class="sandbox-shield-icon" aria-hidden="true">🛡️</div>
+            <div class="sandbox-banner-content">
+              <strong>Secure Client-Side Sandbox:</strong> Uploaded files are inspected locally in memory within your browser to extract metadata and calculate the SHA-256 cryptographic hash. Files are <strong>never executed</strong> on your computer. Behavioral analysis remains safely simulated.
+            </div>
+          </div>
+
+          <!-- File Upload Action Section -->
+          <div class="custom-upload-section">
+            <label class="custom-section-label" for="custom-file-input">Upload Local File for Sandbox Analysis:</label>
+            <div class="custom-upload-row">
+              <input type="file" id="custom-file-input" style="display: none;" aria-label="Upload sample file for sandbox analysis">
+              <button type="button" id="btn-upload-file" class="btn btn-secondary">
+                📁 Upload File
+              </button>
+              <button type="button" id="btn-clear-file" class="btn btn-outline" style="display: none;">
+                ✕ Remove File
+              </button>
+              <span id="custom-upload-status" class="upload-status-hint">No file chosen (or enter executable details manually below)</span>
+            </div>
+          </div>
+
+          <!-- Selected File Inspection Card -->
+          <div id="custom-file-details" class="custom-file-details-card" style="display: none;">
+            <div class="file-details-header">
+              <h5>Selected File Inspection</h5>
+              <span class="status-badge badge-clean">Client-Side Inspected</span>
+            </div>
+            <div class="file-details-grid">
+              <div class="file-prop">
+                <span class="file-prop-label">File Name:</span>
+                <span class="file-prop-value" id="custom-file-name">-</span>
+              </div>
+              <div class="file-prop">
+                <span class="file-prop-label">File Size:</span>
+                <span class="file-prop-value" id="custom-file-size">-</span>
+              </div>
+              <div class="file-prop">
+                <span class="file-prop-label">File Type:</span>
+                <span class="file-prop-value" id="custom-file-type">-</span>
+              </div>
+              <div class="file-prop file-prop-full">
+                <span class="file-prop-label">SHA-256 Hash:</span>
+                <span class="file-prop-value code-font hash-highlight" id="custom-file-hash">-</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="custom-form-grid" style="margin-top: 14px;">
+            <div class="form-group">
+              <label for="custom-name">Simulated Executable Name:</label>
+              <input type="text" id="custom-name" class="lab-select" value="Ransomware_SimulatedTest.exe"
+                style="background:#fff;">
+            </div>
+            <div class="form-group">
+              <label for="custom-sig-type">Static Signature Database Match:</label>
+              <select id="custom-sig-type" class="lab-select">
+                <option value="NONE">No Signature Match (Uncataloged / Zero-Day)</option>
+                <option value="SIG-MAL-001">Match: SIG-MAL-001 (Trojan.Downloader)</option>
+                <option value="SIG-WORM-002">Match: SIG-WORM-002 (Worm.Replicator)</option>
+                <option value="SIG-SPY-003">Match: SIG-SPY-003 (Spyware.KeyLogger)</option>
+              </select>
+            </div>
+          </div>
+
+          <label style="font-weight: 600; font-size: 13px; display: block; margin-top: 8px;">Select Active Runtime
+            Behaviors to Simulate (Safe Behavioral Sandbox):</label>
+          <div class="custom-checkbox-group">
+            <label class="custom-checkbox-label">
+              <input type="checkbox" id="chk-proc" checked>
+              <span><strong>Process Creation:</strong> Spawns hidden background instances of cmd.exe or
+                powershell.exe</span>
+            </label>
+            <label class="custom-checkbox-label">
+              <input type="checkbox" id="chk-file" checked>
+              <span><strong>File Modification:</strong> Rapid encryption and mass renaming of user documents</span>
+            </label>
+            <label class="custom-checkbox-label">
+              <input type="checkbox" id="chk-persist" checked>
+              <span><strong>Persistence Attempt:</strong> Modifies Windows Run keys or installs scheduled tasks</span>
+            </label>
+            <label class="custom-checkbox-label">
+              <input type="checkbox" id="chk-net" checked>
+              <span><strong>Suspicious Network Activity:</strong> Outbound C2 beaconing to untrusted IP addresses</span>
+            </label>
+            <label class="custom-checkbox-label">
+              <input type="checkbox" id="chk-sys">
+              <span><strong>System Modification:</strong> Tampering with security policies or disabling firewall</span>
+            </label>
+          </div>
+
+          <div class="button-row" style="margin-top: 14px;">
+            <button type="button" id="btn-apply-custom" class="btn">Apply Custom Threat Profile</button>
+          </div>
+        </div>
+
+        <div id="sample-info-panel" style="display: none;">
+          <h3>Simulated Program Metadata</h3>
+          <table class="data-table" aria-label="Simulated Program Metadata">
+            <tbody>
+              <tr>
+                <th scope="row">Program Name</th>
+                <td id="meta-name">-</td>
+              </tr>
+              <tr>
+                <th scope="row">Sample ID</th>
+                <td id="meta-id" class="code-font">-</td>
+              </tr>
+              <tr>
+                <th scope="row">File Type</th>
+                <td id="meta-type">-</td>
+              </tr>
+              <tr id="meta-size-row" style="display: none;">
+                <th scope="row">File Size</th>
+                <td id="meta-size">-</td>
+              </tr>
+              <tr>
+                <th scope="row">Simulated Hash (SHA-256)</th>
+                <td id="meta-hash" class="code-font">-</td>
+              </tr>
+              <tr>
+                <th scope="row">Simulated Embedded Signature</th>
+                <td id="meta-sig" class="code-font">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 7. Signature Analysis -->
+      <div class="result-box" id="section-sig-analysis">
+        <h3>Stage 1: Signature Analysis</h3>
+        <p>Checks the simulated sample against the known virus signature database (<code>data/signatures.json</code>).
+        </p>
+
+        <div class="button-row">
+          <button type="button" id="btn-run-signature" class="btn" disabled>Run Signature Scan</button>
+        </div>
+
+        <div id="sig-result-box" style="display: none;">
+          <table class="data-table" aria-label="Signature Scan Results">
+            <tbody>
+              <tr>
+                <th scope="row">Signature Scan Status</th>
+                <td><span id="sig-status-badge" class="status-badge badge-none">Pending</span></td>
+              </tr>
+              <tr>
+                <th scope="row">Matched Signature ID</th>
+                <td id="sig-match-id" class="code-font">-</td>
+              </tr>
+              <tr>
+                <th scope="row">Static Detection Result</th>
+                <td id="sig-detection-label">Pending</td>
+              </tr>
+              <tr>
+                <th scope="row">Analysis Explanation</th>
+                <td id="sig-explanation">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 8. Behavioral Analysis -->
+      <div class="result-box" id="section-behavior-analysis">
+        <h3>Stage 2: Behavioral Analysis</h3>
+        <p>Evaluates simulated runtime execution indicators across system events
+          (<code>data/behavior-profiles.json</code>).</p>
+
+        <ul class="behavior-list" id="behavior-indicator-list">
+          <li class="behavior-item" id="item-process">
+            <span class="behavior-status status-pending" id="status-process">?</span>
+            <div class="behavior-details">
+              <div class="behavior-title">Process Creation</div>
+              <div class="behavior-desc" id="desc-process">Awaiting analysis run...</div>
+            </div>
+          </li>
+          <li class="behavior-item" id="item-file">
+            <span class="behavior-status status-pending" id="status-file">?</span>
+            <div class="behavior-details">
+              <div class="behavior-title">File Modification</div>
+              <div class="behavior-desc" id="desc-file">Awaiting analysis run...</div>
+            </div>
+          </li>
+          <li class="behavior-item" id="item-persistence">
+            <span class="behavior-status status-pending" id="status-persistence">?</span>
+            <div class="behavior-details">
+              <div class="behavior-title">Persistence Attempt</div>
+              <div class="behavior-desc" id="desc-persistence">Awaiting analysis run...</div>
+            </div>
+          </li>
+          <li class="behavior-item" id="item-network">
+            <span class="behavior-status status-pending" id="status-network">?</span>
+            <div class="behavior-details">
+              <div class="behavior-title">Suspicious Network Activity</div>
+              <div class="behavior-desc" id="desc-network">Awaiting analysis run...</div>
+            </div>
+          </li>
+          <li class="behavior-item" id="item-system">
+            <span class="behavior-status status-pending" id="status-system">?</span>
+            <div class="behavior-details">
+              <div class="behavior-title">System Modification</div>
+              <div class="behavior-desc" id="desc-system">Awaiting analysis run...</div>
+            </div>
+          </li>
+        </ul>
+
+        <!-- Feature 1 & 2: Simulated Program Activity & Live Behavioral Risk Score -->
+        <div class="activity-sim-box" id="activity-sim-section">
+          <h4>Simulated Program Activity</h4>
+          <p>Observe the simulated runtime behavior sequence step-by-step as a security monitoring system tracks program
+            execution.</p>
+
+          <div class="button-row">
+            <button type="button" id="btn-start-activity-sim" class="btn" disabled>Start Activity Simulation</button>
+          </div>
+
+          <!-- Live Behavioral Risk Score -->
+          <div class="live-risk-panel" id="live-risk-panel">
+            <div class="live-risk-header">
+              Live Behavioral Risk: <span id="live-risk-score-text">Risk Score: 0 / 5</span> &bull;
+              <span id="live-risk-badge" class="status-badge badge-clean">LOW</span>
+            </div>
+            <div class="live-risk-note">Risk increases as more suspicious behaviors are observed.</div>
+          </div>
+
+          <!-- Event Step Viewer -->
+          <div id="activity-event-card" class="activity-event-card" style="display: none;">
+            <div id="activity-event-badge" class="status-badge badge-none activity-event-badge">STANDBY</div>
+            <div id="activity-event-title" class="activity-event-title">Simulation Ready</div>
+            <div id="activity-event-desc" class="activity-event-desc">Click "Start Activity Simulation" to watch
+              execution events.</div>
+          </div>
+        </div>
+
+        <div id="behavior-result-box" style="display: none;">
+          <table class="data-table" aria-label="Behavioral Analysis Results">
+            <tbody>
+              <tr>
+                <th scope="row">Active Suspicious Indicators</th>
+                <td id="behavior-count">-</td>
+              </tr>
+              <tr>
+                <th scope="row">Calculated Behavioral Risk Level</th>
+                <td><span id="behavior-risk-badge" class="status-badge badge-none">Pending</span></td>
+              </tr>
+              <tr>
+                <th scope="row">Scoring Criteria Applied</th>
+                <td id="behavior-criteria-desc">0–1 indicators = LOW | 2–3 indicators = MEDIUM | 4–5 indicators = HIGH
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 9. Combined Detection Result -->
+      <div class="result-box" id="section-combined-result">
+        <h3>Stage 3: Combined Detection Result</h3>
+        <p>Synthesizes static signature results with dynamic behavioral risk for final classification.</p>
+
+        <div class="summary-grid">
+          <div class="summary-card">
+            <div class="card-label">Signature Result</div>
+            <div class="card-val" id="summary-sig-val"><span class="status-badge badge-none">Pending</span></div>
+          </div>
+          <div class="summary-card">
+            <div class="card-label">Behavioral Risk</div>
+            <div class="card-val" id="summary-beh-val"><span class="status-badge badge-none">Pending</span></div>
+          </div>
+          <div class="summary-card">
+            <div class="card-label">Final Classification</div>
+            <div class="card-val" id="summary-final-val"><span class="status-badge badge-none">Pending</span></div>
+          </div>
+        </div>
+
+        <div class="notice-box" id="combined-explanation-box">
+          <strong>Decision Rationale:</strong>
+          <span id="combined-explanation-text">Execute both Signature Scan and Behavioral Analysis to calculate final
+            classification.</span>
+        </div>
+
+        <!-- Feature 3: Why Was This Detected? -->
+        <div class="why-detected-box" id="why-detected-box">
+          <h4>Why Was This Detected?</h4>
+          <p id="why-detected-text">
+            Execute both Signature Scan and Behavioral Analysis to view why this sample was classified.
+          </p>
+        </div>
+      </div>
+
+      <!-- Feature 4: Analyst Decision -->
+      <div class="analyst-decision-box" id="section-analyst-decision">
+        <h3>Analyst Decision</h3>
+        <p>In real-world security operations, automated tools produce evidence that a human security analyst must
+          interpret before taking action.</p>
+
+        <table class="data-table" aria-label="Analyst Evidence Summary">
+          <tbody>
+            <tr>
+              <th scope="row">Sample</th>
+              <td id="analyst-sample-name">-</td>
+            </tr>
+            <tr>
+              <th scope="row">Signature Result</th>
+              <td id="analyst-sig-result">Pending</td>
+            </tr>
+            <tr>
+              <th scope="row">Behavioral Risk</th>
+              <td id="analyst-beh-risk">Pending</td>
+            </tr>
+            <tr>
+              <th scope="row">Risk Percentage</th>
+              <td id="analyst-risk-percentage">Pending</td>
+            </tr>
+            <tr>
+              <th scope="row">Observed Indicators</th>
+              <td id="analyst-observed-indicators">Pending analysis</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="form-group" style="margin-top: var(--spacing-md);">
+          <label style="font-weight: 600; margin-bottom: var(--spacing-xs); display: block;">
+            What should the analyst do?
+          </label>
+          <div class="analyst-options">
+            <label class="analyst-option-label">
+              <input type="radio" name="analyst_action" value="allow">
+              <span><strong>Allow</strong> &mdash; Permit the application to execute normally on the system.</span>
+            </label>
+            <label class="analyst-option-label">
+              <input type="radio" name="analyst_action" value="investigate">
+              <span><strong>Investigate Further</strong> &mdash; Hold for sandbox execution and deeper reverse
+                engineering.</span>
+            </label>
+            <label class="analyst-option-label">
+              <input type="radio" name="analyst_action" value="quarantine">
+              <span><strong>Quarantine</strong> &mdash; Immediately terminate process and isolate binary from the
+                network.</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button type="button" id="btn-submit-decision" class="btn" disabled>Submit Decision</button>
+        </div>
+
+        <div id="analyst-assessment-box" class="notice-box" style="display: none; margin-top: var(--spacing-md);">
+          <strong>Analyst Assessment:</strong>
+          <p id="analyst-assessment-text" style="margin-top: 4px;"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. Activity Log -->
+    <section class="lab-section" id="section-activity-log" aria-labelledby="heading-activity-log">
+      <h2 id="heading-activity-log">6. Activity Log</h2>
+      <p>Real-time audit trail of actions, scans, and system evaluation events:</p>
+
+      <div class="terminal-log" id="terminal-log" role="region" aria-live="polite" aria-label="Activity Audit Log">
+        [00:00:00] Laboratory initialized. Ready for sample selection.
+      </div>
+
+      <div class="button-row">
+        <button type="button" id="btn-clear-log" class="btn btn-secondary">Clear Log</button>
+        <button type="button" id="btn-reset-lab" class="btn btn-danger">Reset Lab</button>
+      </div>
+    </section>
+
+    <!-- 11. Observation -->
+    <section class="lab-section" id="section-observation" aria-labelledby="heading-observation">
+      <h2 id="heading-observation">7. Observation</h2>
+      <div id="observation-container">
+        <p id="observation-placeholder">
+          No experiment run completed yet. Select a sample program and perform both analyses to generate dynamic
+          observations.
+        </p>
+        <div id="observation-dynamic" style="display: none;">
+          <table class="data-table" aria-label="Lab Observations">
+            <tbody>
+              <tr>
+                <th scope="row">Sample Analyzed</th>
+                <td id="obs-sample-name">-</td>
+              </tr>
+              <tr>
+                <th scope="row">Key Observation</th>
+                <td id="obs-key-finding">-</td>
+              </tr>
+              <tr>
+                <th scope="row">Pedagogical Inference</th>
+                <td id="obs-inference">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. Comparison: Signature-Based vs. Behavioral Analysis -->
+    <section class="lab-section" id="section-comparison" aria-labelledby="heading-comparison">
+      <h2 id="heading-comparison">8. Comparison: Signature-Based vs. Behavioral Analysis</h2>
+
+      <p>
+        In modern malware detection engineering, <strong>Signature-Based Analysis</strong> (static scanning) and
+        <strong>Behavioral Analysis</strong> (dynamic heuristic monitoring) represent two distinct yet complementary
+        paradigms. Understanding their operational differences, trade-offs, and collaborative roles is fundamental for
+        cybersecurity analysts and system administrators.
+      </p>
+
+      <!-- Side-by-side Architectural Highlight Cards -->
+      <div class="comparison-grid">
+        <!-- Signature-Based Card -->
+        <div class="comparison-card comp-card-signature">
+          <div class="comp-card-badge">Static / Pre-Execution</div>
+          <h3 class="comp-card-title">&#128269; Signature-Based Detection</h3>
+          <p class="comp-card-desc">
+            Focuses on <strong>&ldquo;What the file is&rdquo;</strong> by matching static byte patterns, opcode
+            sequences, and cryptographic hashes (e.g., SHA-256) against a repository of cataloged threats.
+          </p>
+          <ul class="comp-card-list">
+            <li><strong>Execution Mode:</strong> Passive inspection; the binary file does not need to execute.</li>
+            <li><strong>Speed:</strong> Instantaneous (sub-millisecond hash/pattern lookup).</li>
+            <li><strong>Accuracy:</strong> Deterministic; near-zero false positives on exact cataloged matches.</li>
+            <li><strong>Resource Impact:</strong> Minimal CPU, memory, and disk footprint.</li>
+            <li><strong>Primary Limitation:</strong> Completely blind to zero-day threats, polymorphic malware, and
+              recompiled code.</li>
+          </ul>
+        </div>
+
+        <!-- Behavioral Analysis Card -->
+        <div class="comparison-card comp-card-behavior">
+          <div class="comp-card-badge">Dynamic / Runtime Heuristics</div>
+          <h3 class="comp-card-title">&#9881; Behavioral Analysis</h3>
+          <p class="comp-card-desc">
+            Focuses on <strong>&ldquo;What the program does&rdquo;</strong> by inspecting runtime API calls, process
+            spawning, registry persistence, unauthorized file tampering, and network telemetry.
+          </p>
+          <ul class="comp-card-list">
+            <li><strong>Execution Mode:</strong> Active execution in a monitored sandbox or live agent.</li>
+            <li><strong>Speed:</strong> Slower; requires observing runtime events and operational delays.</li>
+            <li><strong>Accuracy:</strong> Detects unknown/zero-day attacks by malicious intent and anomaly score.</li>
+            <li><strong>Resource Impact:</strong> Higher system overhead (continuous telemetry tracing).</li>
+            <li><strong>Primary Limitation:</strong> Potential for false positives on complex administrative tools;
+              vulnerable to sandbox evasion/sleep triggers.</li>
+          </ul>
+        </div>
+      </div>
+
+     
+     
+    </section>
+
+    <!-- 9. Conclusion -->
+    <section class="lab-section" id="section-conclusion" aria-labelledby="heading-conclusion">
+      <h2 id="heading-conclusion">9. Conclusion</h2>
+      <p>Through this experiment, the following cybersecurity principles were demonstrated:</p>
+      <ul>
+        <li><strong>Signature-based detection</strong> offers deterministic, high-speed identification of previously
+          cataloged malware. However, it fails completely against zero-day variants and polymorphic code whose binary
+          structure or hash has changed.</li>
+        <li><strong>Behavioral analysis</strong> monitors operational runtime indicators (such as process injection,
+          registry persistence, and unauthorized network egress), effectively flagging suspicious activities regardless
+          of whether a static signature exists.</li>
+        <li><strong>Defense-in-Depth</strong>: Relying on either mechanism alone leaves critical security blind spots.
+          Modern endpoint security solutions combine fast static signature filters with proactive behavioral heuristics
+          to maximize threat detection and minimize false alerts.</li>
+      </ul>
+    </section>
+
+    <!-- 10. Quiz -->
+    <section class="lab-section" id="section-quiz" aria-labelledby="heading-quiz">
+      <h2 id="heading-quiz">10. Self-Assessment Quiz</h2>
+      <p>Answer the following multiple-choice questions to test your understanding of malicious program detection:</p>
+
+      <div class="quiz-container" id="quiz-container">
+        <!-- Questions rendered dynamically by script.js -->
+      </div>
+
+      <div class="button-row">
+        <button type="button" id="btn-submit-quiz" class="btn">Submit Quiz</button>
+      </div>
+
+      <div id="quiz-result-banner" class="quiz-score-banner" style="display: none;">
+        Score: <span id="quiz-score-display">0</span> / 8
+      </div>
+    </section>
+
+    <!-- 11. Lab Report & Certificate Generation -->
+    <section class="lab-section" id="section-report" aria-labelledby="heading-report">
+      <h2 id="heading-report">11. Laboratory Practical Report &amp; Completion Record</h2>
+      <p>Generate a formal academic practical evaluation report summarizing your experimental findings, triage
+        decisions, and quiz evaluation:</p>
+
+      <div class="report-form-grid">
+        <div class="form-group">
+          <label for="student-name">Student Full Name:</label>
+          <input type="text" id="student-name" class="lab-select" placeholder="e.g., Alex Johnson"
+            style="background:#fff;">
+        </div>
+        <div class="form-group">
+          <label for="student-id">Roll Number / Student ID:</label>
+          <input type="text" id="student-id" class="lab-select" placeholder="e.g., CS-2026-084"
+            style="background:#fff;">
+        </div>
+        <div class="form-group">
+          <label for="student-inst">College / Institution:</label>
+          <input type="text" id="student-inst" class="lab-select" placeholder="e.g., Department of Computer Engineering"
+            style="background:#fff;">
+        </div>
+      </div>
+
+      <div class="button-row">
+        <button type="button" id="btn-generate-report" class="btn">Generate Formal Lab Report</button>
+        <button type="button" id="btn-print-report" class="btn btn-secondary" style="display:none;"
+          onclick="window.print()">Print / Save as PDF</button>
+      </div>
+
+      <!-- Generated Report Document View -->
+      <div id="lab-report-view" class="report-modal">
+        <div class="report-header">
+          <div style="font-size: 13px; color: var(--secondary-color); font-weight: 700; text-transform: uppercase;">
+            Virtual Laboratory &bull; Department of Computer Engineering
+          </div>
+          <h3>Academic Practical Evaluation Report</h3>
+          <div style="font-size: 14px; color: var(--text-color); margin-top: 4px;">
+            Experiment: Malicious Program Detection Using Virus Signature &amp; Behavioral Analysis
+          </div>
+        </div>
+
+        <div class="report-meta-grid">
+          <div><strong>Student Name:</strong> <span id="rep-name">-</span></div>
+          <div><strong>Roll / Student ID:</strong> <span id="rep-id">-</span></div>
+          <div><strong>Institution:</strong> <span id="rep-inst">-</span></div>
+          <div><strong>Date &amp; Timestamp:</strong> <span id="rep-date">-</span></div>
+          <div><strong>Simulation Performed:</strong> <span id="rep-sim-status">0% (0 of 4 Samples Completed)</span></div>
+          <div><strong>Quiz Evaluation:</strong> <span id="rep-quiz-status">-</span></div>
+        </div>
+
+        <div class="report-summary-cards">
+          <div class="report-score-highlight report-sim-banner" id="rep-sim-banner">
+            Simulation Performed: <span id="rep-sim-score">0% (0 / 4 Samples)</span>
+          </div>
+          <div class="report-score-highlight" id="rep-score-banner">
+            Self-Assessment Score: <span id="rep-quiz-score">8 / 8 (100% - Distinction)</span>
+          </div>
+        </div>
+
+        <h4 style="margin-bottom: 8px; color: var(--primary-color);">Summary of Analyzed Threat Samples</h4>
+        <table class="data-table" id="rep-samples-table" style="margin-bottom: var(--spacing-lg);">
+          <thead>
+            <tr>
+              <th scope="col">Sample Program</th>
+              <th scope="col">Simulation Status</th>
+              <th scope="col">Signature Scan</th>
+              <th scope="col">Behavioral Risk</th>
+              <th scope="col">Final Verdict</th>
+              <th scope="col">Analyst Action</th>
+            </tr>
+          </thead>
+          <tbody id="rep-samples-tbody">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+
+        <div class="notice-box" style="margin-bottom: var(--spacing-lg);">
+          <strong>Key Academic Learning Takeaway:</strong>
+          <p id="rep-takeaway" style="margin-top: 4px;">
+            Static signature matching is deterministic and fast for known malware, but vulnerable to polymorphic
+            evasion. Dynamic behavioral monitoring tracks operational runtime indicators, providing defense-in-depth
+            against zero-day exploits.
+          </p>
+        </div>
+
+        <div class="report-seal">
+          <div class="seal-box">
+            &#10003; Lab Simulation Verified
+          </div>
+          <div class="signature-line">
+            ____________________________________<br>
+            Instructor / Evaluator Signature
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12. References -->
+    <section class="lab-section" id="section-references" aria-labelledby="heading-references">
+      <h2 id="heading-references">12. References</h2>
+      <ol>
+        <li>NIST Special Publication 800-83 (Rev. 1): <em>Guide to Malware Incident Prevention and Handling for Desktops
+            and Laptops</em>, National Institute of Standards and Technology.</li>
+        <li>William Stallings and Lawrie Brown, <em>Computer Security: Principles and Practice</em>, 4th Edition,
+          Pearson Education.</li>
+        <li>MITRE ATT&amp;CK&reg; Framework: <em>Enterprise Matrix &mdash; Execution, Persistence, and Defense Evasion
+            Techniques</em>.</li>
+        <li>RFC 3227: <em>Guidelines for Evidence Collection and Archiving</em>, Internet Engineering Task Force (IETF).
+        </li>
+        <li>Michael Sikorski and Andrew Honig, <em>Practical Malware Analysis: The Hands-On Guide to Dissecting
+            Malicious Software</em>, No Starch Press.</li>
+      </ol>
+    </section>
+
+    <!-- 13. Feedback -->
+    <section class="lab-section" id="section-feedback" aria-labelledby="heading-feedback">
+      <h2 id="heading-feedback">13. Student Feedback</h2>
+      <div class="feedback-box">
+        <form id="feedback-form" onsubmit="event.preventDefault();">
+          <p><strong>Was this experiment simulation clear and useful?</strong></p>
+          <div style="margin: 8px 0;">
+            <label style="margin-right: 16px;">
+              <input type="radio" name="feedback_useful" value="yes" checked> Yes
+            </label>
+            <label>
+              <input type="radio" name="feedback_useful" value="no"> No
+            </label>
+          </div>
+
+          <label for="feedback-comments" style="display:block; margin-top: 12px; font-weight:600;">
+            Optional Comments / Suggestions:
+          </label>
+          <textarea id="feedback-comments" class="feedback-textarea"
+            placeholder="Enter your feedback here..."></textarea>
+
+          <div class="button-row">
+            <button type="button" id="btn-submit-feedback" class="btn">Submit Feedback</button>
+          </div>
+
+          <div id="feedback-thankyou" class="feedback-msg" role="status">
+            Thank you for your feedback.
+          </div>
+        </form>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="script.js"></script>
+</body>
+
+</html>

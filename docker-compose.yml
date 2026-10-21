@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  malicious-program-detection-lab:
+    build: .
+    container_name: vlab-malicious-program-detection
+    ports:
+      - "8080:80"
+    restart: unless-stopped
