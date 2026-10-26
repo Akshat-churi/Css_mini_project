@@ -184,112 +184,7 @@
             <option value="MAL-001">Sample 2: Known Malicious Program (TrojanDownloader_v1.exe)</option>
             <option value="MAL-MOD-001">Sample 3: Modified Malicious Program (TrojanMorphed_v2.exe)</option>
             <option value="UNK-001">Sample 4: Unknown Program (SysMonitorHelper_x64.exe)</option>
-            <option value="CUSTOM">Option 5: Custom Threat Sandbox (Define Custom Malware Profile)</option>
           </select>
-        </div>
-
-        <!-- Custom Sample Sandbox Form -->
-        <div id="custom-sample-panel" class="custom-threat-card" style="display: none;">
-          <h4>Custom Threat Sandbox (User-Defined Binary & File Upload)</h4>
-          <p style="font-size: 13px; color: var(--secondary-color); margin-bottom: 12px;">
-            Upload an executable or arbitrary file to inspect its cryptographic SHA-256 hash and test signature detection against the local database, or manually configure a custom threat profile with simulated behavioral indicators.
-          </p>
-
-          <!-- Safe Sandbox Execution Disclaimer -->
-          <div class="safe-sandbox-banner" role="status">
-            <div class="sandbox-shield-icon" aria-hidden="true">🛡️</div>
-            <div class="sandbox-banner-content">
-              <strong>Secure Client-Side Sandbox:</strong> Uploaded files are inspected locally in memory within your browser to extract metadata and calculate the SHA-256 cryptographic hash. Files are <strong>never executed</strong> on your computer. Behavioral analysis remains safely simulated.
-            </div>
-          </div>
-
-          <!-- File Upload Action Section -->
-          <div class="custom-upload-section">
-            <label class="custom-section-label" for="custom-file-input">Upload Local File for Sandbox Analysis:</label>
-            <div class="custom-upload-row">
-              <input type="file" id="custom-file-input" style="display: none;" aria-label="Upload sample file for sandbox analysis">
-              <button type="button" id="btn-upload-file" class="btn btn-secondary">
-                📁 Upload File
-              </button>
-              <button type="button" id="btn-clear-file" class="btn btn-outline" style="display: none;">
-                ✕ Remove File
-              </button>
-              <span id="custom-upload-status" class="upload-status-hint">No file chosen (or enter executable details manually below)</span>
-            </div>
-          </div>
-
-          <!-- Selected File Inspection Card -->
-          <div id="custom-file-details" class="custom-file-details-card" style="display: none;">
-            <div class="file-details-header">
-              <h5>Selected File Inspection</h5>
-              <span class="status-badge badge-clean">Client-Side Inspected</span>
-            </div>
-            <div class="file-details-grid">
-              <div class="file-prop">
-                <span class="file-prop-label">File Name:</span>
-                <span class="file-prop-value" id="custom-file-name">-</span>
-              </div>
-              <div class="file-prop">
-                <span class="file-prop-label">File Size:</span>
-                <span class="file-prop-value" id="custom-file-size">-</span>
-              </div>
-              <div class="file-prop">
-                <span class="file-prop-label">File Type:</span>
-                <span class="file-prop-value" id="custom-file-type">-</span>
-              </div>
-              <div class="file-prop file-prop-full">
-                <span class="file-prop-label">SHA-256 Hash:</span>
-                <span class="file-prop-value code-font hash-highlight" id="custom-file-hash">-</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="custom-form-grid" style="margin-top: 14px;">
-            <div class="form-group">
-              <label for="custom-name">Simulated Executable Name:</label>
-              <input type="text" id="custom-name" class="lab-select" value="Ransomware_SimulatedTest.exe"
-                style="background:#fff;">
-            </div>
-            <div class="form-group">
-              <label for="custom-sig-type">Static Signature Database Match:</label>
-              <select id="custom-sig-type" class="lab-select">
-                <option value="NONE">No Signature Match (Uncataloged / Zero-Day)</option>
-                <option value="SIG-MAL-001">Match: SIG-MAL-001 (Trojan.Downloader)</option>
-                <option value="SIG-WORM-002">Match: SIG-WORM-002 (Worm.Replicator)</option>
-                <option value="SIG-SPY-003">Match: SIG-SPY-003 (Spyware.KeyLogger)</option>
-              </select>
-            </div>
-          </div>
-
-          <label style="font-weight: 600; font-size: 13px; display: block; margin-top: 8px;">Select Active Runtime
-            Behaviors to Simulate (Safe Behavioral Sandbox):</label>
-          <div class="custom-checkbox-group">
-            <label class="custom-checkbox-label">
-              <input type="checkbox" id="chk-proc" checked>
-              <span><strong>Process Creation:</strong> Spawns hidden background instances of cmd.exe or
-                powershell.exe</span>
-            </label>
-            <label class="custom-checkbox-label">
-              <input type="checkbox" id="chk-file" checked>
-              <span><strong>File Modification:</strong> Rapid encryption and mass renaming of user documents</span>
-            </label>
-            <label class="custom-checkbox-label">
-              <input type="checkbox" id="chk-persist" checked>
-              <span><strong>Persistence Attempt:</strong> Modifies Windows Run keys or installs scheduled tasks</span>
-            </label>
-            <label class="custom-checkbox-label">
-              <input type="checkbox" id="chk-net" checked>
-              <span><strong>Suspicious Network Activity:</strong> Outbound C2 beaconing to untrusted IP addresses</span>
-            </label>
-            <label class="custom-checkbox-label">
-              <input type="checkbox" id="chk-sys">
-              <span><strong>System Modification:</strong> Tampering with security policies or disabling firewall</span>
-            </label>
-          </div>
-
-          <div class="button-row" style="margin-top: 14px;">
-            <button type="button" id="btn-apply-custom" class="btn">Apply Custom Threat Profile</button>
-          </div>
         </div>
 
         <div id="sample-info-panel" style="display: none;">
@@ -307,10 +202,6 @@
               <tr>
                 <th scope="row">File Type</th>
                 <td id="meta-type">-</td>
-              </tr>
-              <tr id="meta-size-row" style="display: none;">
-                <th scope="row">File Size</th>
-                <td id="meta-size">-</td>
               </tr>
               <tr>
                 <th scope="row">Simulated Hash (SHA-256)</th>

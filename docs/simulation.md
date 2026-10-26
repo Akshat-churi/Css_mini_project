@@ -55,9 +55,6 @@ Students can select and evaluate four representative software archetypes:
    - **Signature:** No match.
    - **Behavior:** 2 of 5 suspicious indicators active (process creation, network activity).
 
-5. **Option 5: Custom Threat Sandbox**
-   - Allows users to define custom executable metadata, upload local files to compute real client-side SHA-256 hashes safely in-memory, configure signature database hits, and toggle individual behavioral indicators.
-
 ---
 
 ## 3. Analysis Stages

@@ -257,8 +257,6 @@ let activitySimTimer = null;
 let isActivitySimRunning = false;
 let liveRiskScore = 0;
 let completedSampleIds = new Set(); // Tracks unique samples whose simulation/analysis is completed
-let uploadedCustomFile = null; // Holds client-side metadata and bytes of user-uploaded file
-
 // Expose state and datasets to window for testing and programmatic integration
 window.QUIZ_QUESTIONS = QUIZ_QUESTIONS;
 window.FALLBACK_SIGNATURES = FALLBACK_SIGNATURES;
@@ -270,278 +268,6 @@ Object.defineProperty(window, "signatureScanResult", { get: () => signatureScanR
 Object.defineProperty(window, "behavioralScanResult", { get: () => behavioralScanResult, set: (v) => { behavioralScanResult = v; } });
 Object.defineProperty(window, "liveRiskScore", { get: () => liveRiskScore, set: (v) => { liveRiskScore = v; } });
 Object.defineProperty(window, "completedSampleIds", { get: () => completedSampleIds, set: (v) => { completedSampleIds = v; } });
-Object.defineProperty(window, "uploadedCustomFile", { get: () => uploadedCustomFile, set: (v) => { uploadedCustomFile = v; } });
-window.calculateSHA256 = calculateSHA256;
-window.formatFileSize = formatFileSize;
-window.matchBytePattern = matchBytePattern;
-window.clearUploadedFile = clearUploadedFile;
-
-/**
- * Calculates SHA-256 hash using the native browser Web Crypto API.
- * Includes a pure JavaScript bitwise fallback for unrestricted execution in all environments.
- * Strictly operates in-memory; DOES NOT execute any file.
- */
-async function calculateSHA256(arrayBuffer) {
-  if (window.crypto && window.crypto.subtle && window.crypto.subtle.digest) {
-    try {
-      const hashBuffer = await crypto.subtle.digest("SHA-256", arrayBuffer);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-    } catch (e) {
-      console.warn("crypto.subtle.digest failed, falling back to JS implementation", e);
-    }
-  }
-  return sha256Fallback(new Uint8Array(arrayBuffer));
-}
-
-/**
- * Pure JavaScript SHA-256 implementation fallback.
- */
-function sha256Fallback(bytes) {
-  function rightRotate(value, amount) {
-    return (value >>> amount) | (value << (32 - amount));
-  }
-  const mathPow = Math.pow;
-  let i, j;
-  let result = "";
-
-  const words = [];
-  const asciiBitLength = bytes.length * 8;
-
-  let hash = [
-    0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
-    0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
-  ];
-
-  const k = [
-    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
-  ];
-
-  for (i = 0; i < bytes.length; i++) {
-    words[i >> 2] |= bytes[i] << (24 - (i % 4) * 8);
-  }
-  words[asciiBitLength >> 5] |= 0x80 << (24 - (asciiBitLength % 32));
-  words[(((asciiBitLength + 64) >> 9) << 4) + 15] = asciiBitLength;
-
-  const w = new Array(64);
-  for (i = 0; i < words.length; i += 16) {
-    let a = hash[0], b = hash[1], c = hash[2], d = hash[3];
-    let e = hash[4], f = hash[5], g = hash[6], h = hash[7];
-
-    for (j = 0; j < 64; j++) {
-      if (j < 16) {
-        w[j] = words[i + j] | 0;
-      } else {
-        const gamma0 = rightRotate(w[j - 15], 7) ^ rightRotate(w[j - 15], 18) ^ (w[j - 15] >>> 3);
-        const gamma1 = rightRotate(w[j - 2], 17) ^ rightRotate(w[j - 2], 19) ^ (w[j - 2] >>> 10);
-        w[j] = (w[j - 16] + gamma0 + w[j - 7] + gamma1) | 0;
-      }
-
-      const s1 = rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25);
-      const ch = (e & f) ^ ((~e) & g);
-      const temp1 = (h + s1 + ch + k[j] + w[j]) | 0;
-      const s0 = rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22);
-      const maj = (a & b) ^ (a & c) ^ (b & c);
-      const temp2 = (s0 + maj) | 0;
-
-      h = g;
-      g = f;
-      f = e;
-      e = (d + temp1) | 0;
-      d = c;
-      c = b;
-      b = a;
-      a = (temp1 + temp2) | 0;
-    }
-
-    hash[0] = (hash[0] + a) | 0;
-    hash[1] = (hash[1] + b) | 0;
-    hash[2] = (hash[2] + c) | 0;
-    hash[3] = (hash[3] + d) | 0;
-    hash[4] = (hash[4] + e) | 0;
-    hash[5] = (hash[5] + f) | 0;
-    hash[6] = (hash[6] + g) | 0;
-    hash[7] = (hash[7] + h) | 0;
-  }
-
-  for (i = 0; i < 8; i++) {
-    for (j = 3; j >= 0; j--) {
-      const b = (hash[i] >> (j * 8)) & 255;
-      result += (b < 16 ? "0" : "") + b.toString(16);
-    }
-  }
-  return result;
-}
-
-/**
- * Formats a byte number into human-readable string with byte count.
- */
-function formatFileSize(bytes) {
-  if (bytes === 0) return "0 Bytes";
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  const formatted = parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-  return `${formatted} (${bytes.toLocaleString()} bytes)`;
-}
-
-/**
- * Determines appropriate display file type from MIME type or file extension.
- */
-function getFileDisplayType(file) {
-  if (file.type && file.type.trim() !== "") {
-    return file.type;
-  }
-  const ext = file.name && file.name.includes(".") ? file.name.split(".").pop().toLowerCase() : "";
-  if (ext === "exe") return "Windows Executable (.exe)";
-  if (ext === "dll") return "Dynamic Link Library (.dll)";
-  if (ext === "sys") return "System Driver (.sys)";
-  if (ext === "bin") return "Binary Executable (.bin)";
-  if (ext === "elf") return "Linux ELF Binary (.elf)";
-  if (ext === "bat" || ext === "cmd") return "Windows Command Script";
-  if (ext === "ps1") return "PowerShell Script (.ps1)";
-  if (ext === "sh") return "Shell Script (.sh)";
-  if (ext === "py") return "Python Script (.py)";
-  if (ext === "js") return "JavaScript File (.js)";
-  if (ext === "txt") return "Text Document (.txt)";
-  return ext ? `${ext.toUpperCase()} File` : "Binary / Unspecified Format";
-}
-
-/**
- * Checks if a byte sequence pattern (hex string with optional '??' wildcards) appears in file bytes.
- */
-function matchBytePattern(fileBytes, patternStr) {
-  if (!fileBytes || !patternStr) return false;
-  const patternTokens = patternStr.trim().split(/\s+/).map((token) => {
-    if (token === "??" || token === "?") return null;
-    return parseInt(token, 16);
-  });
-  const pLen = patternTokens.length;
-  const fLen = fileBytes.length;
-  if (fLen < pLen) return false;
-
-  for (let i = 0; i <= fLen - pLen; i++) {
-    let match = true;
-    for (let j = 0; j < pLen; j++) {
-      const expected = patternTokens[j];
-      if (expected !== null && fileBytes[i + j] !== expected) {
-        match = false;
-        break;
-      }
-    }
-    if (match) return true;
-  }
-  return false;
-}
-
-/**
- * Handles file selection in the Custom Threat Sandbox.
- * Reads the file client-side, extracts metadata, and calculates SHA-256 hash.
- * STRICTLY client-side parsing; DOES NOT execute the file on the user's computer.
- */
-async function handleFileUpload(e) {
-  const file = e.target.files && e.target.files[0];
-  if (!file) return;
-
-  const statusHint = document.getElementById("custom-upload-status");
-  if (statusHint) statusHint.textContent = `Analyzing ${file.name}...`;
-
-  try {
-    const arrayBuffer = await file.arrayBuffer();
-    const sha256Hex = await calculateSHA256(arrayBuffer);
-    const formattedSize = formatFileSize(file.size);
-    const displayType = getFileDisplayType(file);
-
-    uploadedCustomFile = {
-      name: file.name,
-      size: file.size,
-      formattedSize: formattedSize,
-      type: displayType,
-      hash: sha256Hex,
-      bytes: new Uint8Array(arrayBuffer)
-    };
-
-    // Update UI elements in Custom Threat Sandbox
-    const nameEl = document.getElementById("custom-file-name");
-    const sizeEl = document.getElementById("custom-file-size");
-    const typeEl = document.getElementById("custom-file-type");
-    const hashEl = document.getElementById("custom-file-hash");
-    const detailsCard = document.getElementById("custom-file-details");
-    const btnClear = document.getElementById("btn-clear-file");
-    const nameInput = document.getElementById("custom-name");
-
-    if (nameEl) nameEl.textContent = uploadedCustomFile.name;
-    if (sizeEl) sizeEl.textContent = uploadedCustomFile.formattedSize;
-    if (typeEl) typeEl.textContent = uploadedCustomFile.type;
-    if (hashEl) hashEl.textContent = uploadedCustomFile.hash;
-
-    if (detailsCard) detailsCard.style.display = "block";
-    if (btnClear) btnClear.style.display = "inline-block";
-    if (statusHint) statusHint.textContent = `Selected: ${uploadedCustomFile.name} (${uploadedCustomFile.formattedSize})`;
-
-    // Automatically sync simulated executable name input
-    if (nameInput) {
-      nameInput.value = uploadedCustomFile.name;
-    }
-
-    addLog(`File inspected in sandbox: ${uploadedCustomFile.name} (${uploadedCustomFile.formattedSize})`, "info");
-    addLog(`Calculated SHA-256: ${uploadedCustomFile.hash}`, "info");
-
-    // Pre-check against local test database
-    const matchingProfile = behaviorProfilesData.find(
-      (p) => p.simulatedHash && p.simulatedHash.toLowerCase() === sha256Hex.toLowerCase()
-    );
-    const patternMatch = signaturesData.find((sig) => matchBytePattern(uploadedCustomFile.bytes, sig.pattern));
-
-    if (matchingProfile && matchingProfile.simulatedSignature && matchingProfile.simulatedSignature !== "None") {
-      addLog(`Database heuristic: SHA-256 matches cataloged profile ${matchingProfile.sampleId} (${matchingProfile.simulatedSignature}).`, "match");
-      const sigTypeSelect = document.getElementById("custom-sig-type");
-      if (sigTypeSelect) sigTypeSelect.value = matchingProfile.simulatedSignature;
-    } else if (patternMatch) {
-      addLog(`Database heuristic: Byte sequence matches signature ${patternMatch.id} (${patternMatch.name}).`, "match");
-      const sigTypeSelect = document.getElementById("custom-sig-type");
-      if (sigTypeSelect) sigTypeSelect.value = patternMatch.id;
-    }
-  } catch (err) {
-    console.error("Error reading uploaded file:", err);
-    if (statusHint) statusHint.textContent = "Error inspecting file.";
-    alert("Could not read file for sandbox inspection: " + err.message);
-  }
-}
-
-/**
- * Clears selected uploaded file from sandbox memory and UI.
- */
-function clearUploadedFile(shouldLog = true) {
-  uploadedCustomFile = null;
-  const customFileInput = document.getElementById("custom-file-input");
-  if (customFileInput) customFileInput.value = "";
-
-  const detailsCard = document.getElementById("custom-file-details");
-  if (detailsCard) detailsCard.style.display = "none";
-
-  const btnClear = document.getElementById("btn-clear-file");
-  if (btnClear) btnClear.style.display = "none";
-
-  const statusHint = document.getElementById("custom-upload-status");
-  if (statusHint) statusHint.textContent = "No file chosen (or enter executable details manually below)";
-
-  const nameInput = document.getElementById("custom-name");
-  if (nameInput && (nameInput.value.trim() === "" || (uploadedCustomFile && nameInput.value === uploadedCustomFile.name))) {
-    nameInput.value = "Ransomware_SimulatedTest.exe";
-  }
-
-  if (shouldLog) {
-    addLog("Uploaded sandbox file removed.", "info");
-  }
-}
 
 /**
  * Initializes the lab module, loads data, and registers event listeners.
@@ -592,11 +318,7 @@ function setupEventListeners() {
   const btnResetLab = document.getElementById("btn-reset-lab");
   const btnSubmitQuiz = document.getElementById("btn-submit-quiz");
   const btnSubmitFeedback = document.getElementById("btn-submit-feedback");
-  const btnApplyCustom = document.getElementById("btn-apply-custom");
   const btnGenerateReport = document.getElementById("btn-generate-report");
-  const btnUploadFile = document.getElementById("btn-upload-file");
-  const customFileInput = document.getElementById("custom-file-input");
-  const btnClearFile = document.getElementById("btn-clear-file");
 
   if (sampleSelect) {
     sampleSelect.addEventListener("change", (e) => selectSample(e.target.value));
@@ -634,24 +356,8 @@ function setupEventListeners() {
     btnSubmitFeedback.addEventListener("click", showFeedback);
   }
 
-  if (btnApplyCustom) {
-    btnApplyCustom.addEventListener("click", applyCustomSample);
-  }
-
   if (btnGenerateReport) {
     btnGenerateReport.addEventListener("click", generateLabReport);
-  }
-
-  if (btnUploadFile && customFileInput) {
-    btnUploadFile.addEventListener("click", () => customFileInput.click());
-  }
-
-  if (customFileInput) {
-    customFileInput.addEventListener("change", handleFileUpload);
-  }
-
-  if (btnClearFile) {
-    btnClearFile.addEventListener("click", () => clearUploadedFile(true));
   }
 }
 
@@ -695,15 +401,10 @@ function selectSample(sampleId) {
   }
   isActivitySimRunning = false;
 
-  const customPanel = document.getElementById("custom-sample-panel");
-
   if (!sampleId) {
     currentSample = null;
     resetAnalysisState();
-    if (customPanel) customPanel.style.display = "none";
     document.getElementById("sample-info-panel").style.display = "none";
-    const metaSizeRow = document.getElementById("meta-size-row");
-    if (metaSizeRow) metaSizeRow.style.display = "none";
     document.getElementById("btn-run-signature").disabled = true;
     const btnRunBeh = document.getElementById("btn-run-behavior");
     if (btnRunBeh) btnRunBeh.disabled = true;
@@ -711,26 +412,6 @@ function selectSample(sampleId) {
     if (btnStartSim) btnStartSim.disabled = true;
     return;
   }
-
-  if (sampleId === "CUSTOM") {
-    currentSample = null;
-    resetAnalysisState();
-    if (customPanel) customPanel.style.display = "block";
-    document.getElementById("sample-info-panel").style.display = "none";
-    const metaSizeRow = document.getElementById("meta-size-row");
-    if (metaSizeRow) metaSizeRow.style.display = "none";
-    document.getElementById("btn-run-signature").disabled = true;
-    const btnRunBeh = document.getElementById("btn-run-behavior");
-    if (btnRunBeh) btnRunBeh.disabled = true;
-    const btnStartSim = document.getElementById("btn-start-activity-sim");
-    if (btnStartSim) btnStartSim.disabled = true;
-    addLog("Custom Threat Sandbox mode opened. Configure your sample parameters and click 'Apply'.", "info");
-    return;
-  }
-
-  if (customPanel) customPanel.style.display = "none";
-  const metaSizeRow = document.getElementById("meta-size-row");
-  if (metaSizeRow) metaSizeRow.style.display = "none";
 
   // Lookup profile in loaded data
   const profile = behaviorProfilesData.find((item) => item.sampleId === sampleId);
@@ -871,19 +552,6 @@ function runSignatureScan() {
     (sig) => sig.sampleId === currentSample.sampleId || (currentSample.simulatedSignature && currentSample.simulatedSignature !== "None" && currentSample.simulatedSignature !== "NONE" && sig.id === currentSample.simulatedSignature)
   );
 
-  // If no match yet and current sample is custom with an uploaded file, check against database hashes and byte patterns
-  if (!matchedSig && currentSample.uploadedFile) {
-    const matchingProfile = behaviorProfilesData.find(
-      (p) => p.simulatedHash && p.simulatedHash.toLowerCase() === currentSample.simulatedHash.toLowerCase()
-    );
-    if (matchingProfile && matchingProfile.simulatedSignature && matchingProfile.simulatedSignature !== "None") {
-      matchedSig = signaturesData.find((s) => s.id === matchingProfile.simulatedSignature);
-    }
-    if (!matchedSig && currentSample.uploadedFile.bytes) {
-      matchedSig = signaturesData.find((sig) => matchBytePattern(currentSample.uploadedFile.bytes, sig.pattern));
-    }
-  }
-
   const sigResultBox = document.getElementById("sig-result-box");
   const badgeEl = document.getElementById("sig-status-badge");
   const matchIdEl = document.getElementById("sig-match-id");
@@ -919,9 +587,6 @@ function runSignatureScan() {
     } else if (currentSample.sampleId === "UNK-001") {
       detection = "Unknown / No Match";
       explanation = "No matching signature identified. Program binary is uncataloged in the current signature database.";
-    } else if (currentSample.sampleId === "CUSTOM-001") {
-      detection = "Clean / Zero-Day (No Match)";
-      explanation = `No matching signature found in the local test database (${signaturesData.length} signature records evaluated). The binary byte sequence and cryptographic SHA-256 hash are uncataloged in this database.`;
     }
 
     signatureScanResult = {
@@ -1122,9 +787,6 @@ function runBehaviorAnalysis() {
   if (btnRunBehavior) btnRunBehavior.disabled = false;
 
   addLog(`Behavioral analysis started for sample: ${currentSample.name}`);
-  if (currentSample.isUploadedFile) {
-    addLog("Safe Sandbox Mode: Running simulated behavioral analysis (binary execution disabled for security).", "info");
-  }
 
   const behaviors = currentSample.behaviors;
   let activeCount = 0;
@@ -1321,14 +983,6 @@ function generateFinalResult() {
     } else if (currentSample.sampleId === "UNK-001") {
       whyDetectedEl.textContent =
         "No known signature was found, so behavioral evidence becomes important when deciding whether the program requires further investigation.";
-    } else if (currentSample.sampleId === "CUSTOM-001") {
-      if (signatureScanResult && signatureScanResult.status === "MATCH") {
-        whyDetectedEl.textContent =
-          `This custom sample was detected because it matched signature ${signatureScanResult.matchId} in the test database and displayed ${behavioralScanResult ? behavioralScanResult.riskLevel : 'simulated'} behavioral risk (${behavioralScanResult ? behavioralScanResult.activeCount : 0}/5 indicators).`;
-      } else {
-        whyDetectedEl.textContent =
-          `No known signature match was found for this custom sample. The detection verdict is guided by the ${behavioralScanResult ? behavioralScanResult.riskLevel : 'simulated'} risk level (${behavioralScanResult ? behavioralScanResult.activeCount : 0}/5 indicators) configured in the sandbox.`;
-      }
     }
   }
 
@@ -1570,14 +1224,7 @@ function resetLab() {
   const feedbackMsg = document.getElementById("feedback-thankyou");
   if (feedbackMsg) feedbackMsg.style.display = "none";
 
-  // Reset Custom Sandbox & Report View
-  const customPanel = document.getElementById("custom-sample-panel");
-  if (customPanel) customPanel.style.display = "none";
-
-  clearUploadedFile(false);
-  const metaSizeRow = document.getElementById("meta-size-row");
-  if (metaSizeRow) metaSizeRow.style.display = "none";
-
+  // Reset Report View
   const reportView = document.getElementById("lab-report-view");
   if (reportView) reportView.style.display = "none";
 
@@ -1692,109 +1339,6 @@ function showFeedback() {
 }
 
 /**
- * Applies custom threat profile in the sandbox.
- */
-function applyCustomSample() {
-  const nameInput = document.getElementById("custom-name");
-  const sigTypeSelect = document.getElementById("custom-sig-type");
-  const sigChoice = sigTypeSelect ? sigTypeSelect.value : "NONE";
-
-  let progName = "";
-  let fileType = "";
-  let hashVal = "";
-  let fileSize = null;
-  let isUploaded = false;
-
-  if (uploadedCustomFile) {
-    progName = uploadedCustomFile.name;
-    fileType = uploadedCustomFile.type;
-    hashVal = uploadedCustomFile.hash;
-    fileSize = uploadedCustomFile.formattedSize;
-    isUploaded = true;
-  } else {
-    progName = nameInput && nameInput.value.trim() ? nameInput.value.trim() : "Custom_Threat.exe";
-    fileType = "Simulated Custom Executable (User-Configured)";
-    fileSize = null;
-    hashVal = "a1b2c3d4e5f67890custom" + Math.abs(progName.split("").reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0)).toString(16).padStart(16, "0");
-    isUploaded = false;
-  }
-
-  const procActive = document.getElementById("chk-proc")?.checked || false;
-  const fileActive = document.getElementById("chk-file")?.checked || false;
-  const persistActive = document.getElementById("chk-persist")?.checked || false;
-  const netActive = document.getElementById("chk-net")?.checked || false;
-  const sysActive = document.getElementById("chk-sys")?.checked || false;
-
-  const customProfile = {
-    sampleId: "CUSTOM-001",
-    name: `Custom Sandbox: ${progName}`,
-    fileType: fileType,
-    fileSize: fileSize,
-    simulatedHash: hashVal,
-    simulatedSignature: sigChoice === "NONE" ? "None" : sigChoice,
-    isUploadedFile: isUploaded,
-    uploadedFile: uploadedCustomFile ? { ...uploadedCustomFile } : null,
-    behaviors: {
-      processCreation: {
-        active: procActive,
-        detail: procActive ? "Spawns unauthorized background processes with command-line arguments." : "Standard process execution; no abnormal child processes spawned."
-      },
-      fileModification: {
-        active: fileActive,
-        detail: fileActive ? "Rapid file encryption bursts and mass renaming observed in user directories." : "Standard document read/write operations within legitimate working paths."
-      },
-      persistenceAttempt: {
-        active: persistActive,
-        detail: persistActive ? "Adds startup Run registry keys or schedules persistent tasks across reboots." : "No persistence mechanisms or startup triggers created."
-      },
-      networkActivity: {
-        active: netActive,
-        detail: netActive ? "Outbound socket beaconing to untrusted external IP address on non-standard port." : "No unexpected outbound network egress detected."
-      },
-      systemModification: {
-        active: sysActive,
-        detail: sysActive ? "Attempts tampering with system security policies or terminating antivirus services." : "No unauthorized modification of operating system security parameters."
-      }
-    }
-  };
-
-  currentSample = customProfile;
-  resetAnalysisState();
-
-  document.getElementById("meta-name").textContent = customProfile.name;
-  document.getElementById("meta-id").textContent = customProfile.sampleId;
-  document.getElementById("meta-type").textContent = customProfile.fileType;
-  document.getElementById("meta-hash").textContent = customProfile.simulatedHash;
-  document.getElementById("meta-sig").textContent = customProfile.simulatedSignature;
-
-  const metaSizeRow = document.getElementById("meta-size-row");
-  const metaSizeEl = document.getElementById("meta-size");
-  if (metaSizeRow && metaSizeEl) {
-    if (customProfile.fileSize) {
-      metaSizeEl.textContent = customProfile.fileSize;
-      metaSizeRow.style.display = "table-row";
-    } else {
-      metaSizeRow.style.display = "none";
-    }
-  }
-
-  document.getElementById("sample-info-panel").style.display = "block";
-  document.getElementById("btn-run-signature").disabled = false;
-  const btnRunBeh = document.getElementById("btn-run-behavior");
-  if (btnRunBeh) btnRunBeh.disabled = false;
-  const btnStartSim = document.getElementById("btn-start-activity-sim");
-  if (btnStartSim) btnStartSim.disabled = false;
-
-  const analystSample = document.getElementById("analyst-sample-name");
-  if (analystSample) analystSample.textContent = customProfile.name;
-
-  addLog(`Custom threat profile configured: ${customProfile.name} (Signature: ${customProfile.simulatedSignature})`, "info");
-  if (isUploaded) {
-    addLog(`Uploaded sample file ready: ${progName} (${fileSize}) | SHA-256: ${hashVal}`, "info");
-  }
-}
-
-/**
  * Generates formal printable academic laboratory evaluation report.
  */
 function generateLabReport() {
@@ -1889,19 +1433,6 @@ function generateLabReport() {
         </tr>
       `;
     });
-
-    if (currentSample && currentSample.sampleId === "CUSTOM-001") {
-      rowsHtml += `
-        <tr>
-          <td><strong>${currentSample.name}</strong> (Custom Sandbox)</td>
-          <td><span class="status-badge badge-clean">Custom Tested</span></td>
-          <td>${signatureScanResult ? signatureScanResult.status : "Evaluated"}</td>
-          <td>${behavioralScanResult ? behavioralScanResult.riskLevel + " (" + behavioralScanResult.activeCount + "/5)" : "Evaluated"}</td>
-          <td>${document.getElementById("summary-final-val")?.textContent || "Custom Evaluated"}</td>
-          <td>User Triaged</td>
-        </tr>
-      `;
-    }
 
     tbody.innerHTML = rowsHtml;
   }
